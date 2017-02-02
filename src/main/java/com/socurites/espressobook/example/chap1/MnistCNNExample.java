@@ -1,4 +1,4 @@
-package com.socurites.espressobook.example.cnn;
+package com.socurites.espressobook.example.chap1;
 
 
 import java.io.IOException;
@@ -16,7 +16,6 @@ import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -28,44 +27,70 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * MNIST classifier example using DenseLayer
  * 
  * @author socurites
  *
  */
-public class IrisDNNExample {
-    private static Logger log = LoggerFactory.getLogger(IrisDNNExample.class);
+public class MnistCNNExample {
+    private static Logger log = LoggerFactory.getLogger(MnistCNNExample.class);
     
-    /* random number seedf for reproducibility. */
-    public static final int RNG_SEED = 123;
+    /*
+     * batch size for each epoch.
+     * uses all train items for batch gradient learning
+     */
+    public static final int BATCH_SIZE = 120;
     
-    /* batch size for each epoch. */
-    public static final int BATCH_SIZE = 5;
-    
-    /* # of input features. */
+    /* 
+     * # of input features. 
+     */
     public static final int INPUT_NUM = 4;
     
-    /* # of output classes */
+    /* 
+     * # of output classes
+     * Iris-setosa, Iris-versicolor, Iris-virginica
+     */
     public static final int OUTPUT_NUM = 3;
     
-    public static final String[] labels = {"Iris-setosa", "Iris-versicolor", "Iris-virginica"};
+    /*
+     * labels of output classes
+     */
+    public static final String[] LABELS = {"Iris-setosa", "Iris-versicolor", "Iris-virginica"};
 
     public static void main(String[] args) throws Exception {
-    	IrisDNNExample example = new IrisDNNExample();
+    	MnistCNNExample example = new MnistCNNExample();
     	
-    	DataSetIterator trainDataSetIterator 	= example.loadDataSet("data/iris/iris_train.data");
-    	DataSetIterator testDataSetIterator 	= example.loadDataSet("data/iris/iris_test.data");
+    	// 1. Loads datasets for training and evaluation
+    	DataSetIterator trainDataSetIterator 	= example.loadDataSet("data/iris/iris_train.data", BATCH_SIZE);
+    	DataSetIterator testDataSetIterator 	= example.loadDataSet("data/iris/iris_test.data", 1);
+    	
+    	// 2. Configures network
     	MultiLayerConfiguration conf 			= example.configureNetwork();
+    	
+    	// 3. Trains network using training datasets
     	MultiLayerNetwork model					= example.train(conf, trainDataSetIterator);
+    	
+    	// 4. Evaluates network using test datasets
     											  example.evaluate(model, testDataSetIterator);
     }
     
-    private DataSetIterator loadDataSet(String dataFilePath) throws IOException, InterruptedException {
+    /**
+     * Loads datasets for training and evaluation
+     * 
+     * @param dataFilePath file path for datasets
+     * @param batchSize size of batch
+     * @return Instance of DatasetIterator
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private DataSetIterator loadDataSet(String dataFilePath, int batchSize) throws IOException, InterruptedException {
+    	log.info("Load datasets....");
     	CSVRecordReader recordReader = new CSVRecordReader();
     	recordReader.initialize(new FileSplit(new ClassPathResource(dataFilePath).getFile()));
     	
-    	LabelWriterConverter labelConverter = new LabelWriterConverter(Arrays.asList(labels));
+    	LabelWriterConverter labelConverter = new LabelWriterConverter(Arrays.asList(LABELS));
     	
-    	RecordReaderDataSetIterator dataSetIterator = new RecordReaderDataSetIterator(recordReader, labelConverter, BATCH_SIZE, 4, 3);
+    	RecordReaderDataSetIterator dataSetIterator = new RecordReaderDataSetIterator(recordReader, labelConverter, batchSize, 4, 3);
     	
     	return dataSetIterator;
     }
@@ -73,27 +98,20 @@ public class IrisDNNExample {
     private MultiLayerConfiguration configureNetwork() {
     	log.info("Build model....");
         MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
-        		// include a random seed for reproducibility
-                .seed(RNG_SEED) 
-                // use stochastic gradient descent as an optimization algorithm
                 .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .iterations(5)
-                // specify the learning rate
-                .learningRate(0.01)
-                // specify the rate of change of the learning rate.
-                .updater(Updater.NESTEROVS).momentum(0.9)
+                .iterations(1)
+                .learningRate(0.15)
                 .list()
-                .layer(0, new DenseLayer.Builder() //create the first, input layer with xavier initialization
+                .layer(0, new DenseLayer.Builder()
                         .nIn(INPUT_NUM)
                         .nOut(10)
                         .activation(Activation.TANH)
                         .build())
-                .layer(1, new OutputLayer.Builder(LossFunction.XENT) //create hidden layer
+                .layer(1, new OutputLayer.Builder(LossFunction.NEGATIVELOGLIKELIHOOD)
                         .nIn(10)
                         .nOut(OUTPUT_NUM)
                         .activation(Activation.SOFTMAX)
                         .build())
-                // use backpropagation to adjust weights
                 .pretrain(false).backprop(true) 
                 .build();
         
@@ -101,12 +119,11 @@ public class IrisDNNExample {
     }
     
     private MultiLayerNetwork train(MultiLayerConfiguration conf, DataSetIterator trainSetIterator) throws IOException {
-        int numEpochs = 2; // number of epochs to perform
+        int numEpochs = 25;
 
 
         MultiLayerNetwork model = new MultiLayerNetwork(conf);
         model.init();
-        //print the score with every 1 iteration
         model.setListeners(new ScoreIterationListener(1));
 
         log.info("Train model....");
@@ -119,8 +136,7 @@ public class IrisDNNExample {
 
     private void evaluate(MultiLayerNetwork model, DataSetIterator testSetIterator) {
     	log.info("Evaluate model....");
-//        Evaluation eval = new Evaluation(OUTPUT_NUM); //create an evaluation object with 10 possible classes
-        Evaluation eval = new Evaluation(Arrays.asList(labels));
+        Evaluation eval = new Evaluation(OUTPUT_NUM);
         while(testSetIterator.hasNext()){
             DataSet t = testSetIterator.next();
             INDArray features = t.getFeatureMatrix();
@@ -128,13 +144,8 @@ public class IrisDNNExample {
             INDArray predicted = model.output(features,false);
             
             eval.eval(lables, predicted);
-            
-            System.out.println(lables);
-            System.out.println(predicted);
-
         }
 
         log.info(eval.stats());
-        log.info("****************Example finished********************");
     }
 }

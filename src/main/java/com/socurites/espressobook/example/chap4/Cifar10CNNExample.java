@@ -1,4 +1,4 @@
-package com.socurites.espressobook.example.chap1;
+package com.socurites.espressobook.example.chap4;
 
 
 import java.io.File;
@@ -41,17 +41,17 @@ import org.slf4j.LoggerFactory;
  * @author socurites
  *
  */
-public class MnistCNNExample {
-    private static Logger log = LoggerFactory.getLogger(MnistCNNExample.class);
+public class Cifar10CNNExample {
+    private static Logger log = LoggerFactory.getLogger(Cifar10CNNExample.class);
     
     protected static final String [] allowedExtensions = BaseImageLoader.ALLOWED_FORMATS;
     
     protected static final long seed = 12345;
     public static final Random randNumGen = new Random(seed);
     
-    protected static final int width = 28;
-    protected static final int height = 28;
-    protected static final int channels = 1;
+    protected static final int width = 32;
+    protected static final int height = 32;
+    protected static final int channels = 3;
     
     
     
@@ -62,7 +62,7 @@ public class MnistCNNExample {
      * batch size for each epoch.
      * uses all train items for batch gradient learning
      */
-    public static final int BATCH_SIZE = 1208;
+    public static final int BATCH_SIZE = 50;
     
     /* 
      * # of output classes
@@ -76,7 +76,7 @@ public class MnistCNNExample {
 //    public static final String[] LABELS = {"Iris-setosa", "Iris-versicolor", "Iris-virginica"};
 
     public static void main(String[] args) throws Exception {
-    	MnistCNNExample example = new MnistCNNExample();
+    	Cifar10CNNExample example = new Cifar10CNNExample();
     	
     	// 1. Loads datasets for training and evaluation
     	ParentPathLabelGenerator labelMaker = new ParentPathLabelGenerator();
@@ -113,7 +113,7 @@ public class MnistCNNExample {
     
     
     private InputSplit[] loadDataSets(BalancedPathFilter pathFilter) throws IOException, InterruptedException {
-    	File parentDir = new File(System.getProperty("user.home"), "Projects/write-dl4j-book-espresso/datasets/mnist_png_small/");
+    	File parentDir = new File(System.getProperty("user.home"), "Projects/write-dl4j-book-espresso/datasets/cifar_10_png/");
     	
     	System.out.println(parentDir);
     	
@@ -158,17 +158,17 @@ public class MnistCNNExample {
                         .kernelSize(2,2)
                         .stride(2,2)
                         .build())
-                .layer(4, new DenseLayer.Builder().activation(Activation.IDENTITY)
+                .layer(4, new DenseLayer.Builder().activation(Activation.RELU)
                         .nOut(400).build())
-                .layer(4, new DenseLayer.Builder().activation(Activation.IDENTITY)
+                .layer(4, new DenseLayer.Builder().activation(Activation.RELU)
                         .nOut(120).build())
-                .layer(4, new DenseLayer.Builder().activation(Activation.IDENTITY)
+                .layer(4, new DenseLayer.Builder().activation(Activation.RELU)
                         .nOut(84).build())
                 .layer(5, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                         .nOut(OUTPUT_NUM)
                         .activation(Activation.SOFTMAX)
                         .build())
-                .setInputType(InputType.convolutionalFlat(28,28,1))
+                .setInputType(InputType.convolutionalFlat(32,32,3))
                 .backprop(true).pretrain(false).build();
         
         return conf;

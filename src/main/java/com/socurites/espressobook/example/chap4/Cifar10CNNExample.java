@@ -62,13 +62,13 @@ public class Cifar10CNNExample {
      * batch size for each epoch.
      * uses all train items for batch gradient learning
      */
-    public static final int BATCH_SIZE = 50;
+    public static final int batchSize = 50;
     
     /* 
      * # of output classes
      * Iris-setosa, Iris-versicolor, Iris-virginica
      */
-    public static final int OUTPUT_NUM = 10;
+    public static final int numOutput = 10;
     
     /*
      * labels of output classes
@@ -88,14 +88,14 @@ public class Cifar10CNNExample {
     	
     	ImageRecordReader trainRecordReader = new ImageRecordReader(height, width, channels, labelMaker);
     	trainRecordReader.initialize(trainData);
-    	DataSetIterator trainDataSetIterator = new RecordReaderDataSetIterator(trainRecordReader, BATCH_SIZE, 1, OUTPUT_NUM);
+    	DataSetIterator trainDataSetIterator = new RecordReaderDataSetIterator(trainRecordReader, batchSize, 1, numOutput);
     	DataNormalization trainScaler = new ImagePreProcessingScaler(0,1);
     	trainScaler.fit(trainDataSetIterator);
         trainDataSetIterator.setPreProcessor(trainScaler);
     	
     	ImageRecordReader testRecordReader = new ImageRecordReader(height, width, channels, labelMaker);
     	testRecordReader.initialize(testData);
-    	DataSetIterator testDataSetIterator = new RecordReaderDataSetIterator(testRecordReader, 10, 1, OUTPUT_NUM);
+    	DataSetIterator testDataSetIterator = new RecordReaderDataSetIterator(testRecordReader, 10, 1, numOutput);
     	DataNormalization testScaler = new ImagePreProcessingScaler(0,1);
     	testScaler.fit(trainDataSetIterator);
         trainDataSetIterator.setPreProcessor(testScaler);
@@ -165,7 +165,7 @@ public class Cifar10CNNExample {
                 .layer(4, new DenseLayer.Builder().activation(Activation.RELU)
                         .nOut(84).build())
                 .layer(5, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
-                        .nOut(OUTPUT_NUM)
+                        .nOut(numOutput)
                         .activation(Activation.SOFTMAX)
                         .build())
                 .setInputType(InputType.convolutionalFlat(32,32,3))
@@ -192,7 +192,7 @@ public class Cifar10CNNExample {
 
     private void evaluate(MultiLayerNetwork model, DataSetIterator testSetIterator) {
     	log.info("Evaluate model....");
-        Evaluation eval = new Evaluation(OUTPUT_NUM);
+        Evaluation eval = new Evaluation(numOutput);
         while(testSetIterator.hasNext()){
             DataSet t = testSetIterator.next();
             INDArray features = t.getFeatureMatrix();

@@ -14,6 +14,7 @@
 		<!-- nd4j.backend>nd4j-cuda-7.5-platform</nd4j.backend> <nd4j.backend>nd4j-cuda-8.0-platform</nd4j.backend -->
 		<nd4j.version>0.7.2</nd4j.version>
 		<dl4j.version>0.7.2</dl4j.version>
+		<datavec.version>0.7.2</datavec.version>
 		<slf4j.version>1.7.5</slf4j.version>
 	</properties>
 
@@ -31,6 +32,13 @@
 			<groupId>org.deeplearning4j</groupId>
 			<artifactId>deeplearning4j-core</artifactId>
 			<version>${dl4j.version}</version>
+		</dependency>
+		
+		<!-- DataVec API -->
+		<dependency>
+			<groupId>org.datavec</groupId>
+			<artifactId>datavec-api</artifactId>
+			<version>${datavec.version}</version>
 		</dependency>
 
 		<!-- Logging -->
